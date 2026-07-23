@@ -49,6 +49,7 @@ export default function AdminPage() {
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
+  const [downloadingFileId, setDownloadingFileId] = useState(null);
 
   const fetchSubmissions = async (client) => {
     const { data, error } = await client
@@ -97,6 +98,42 @@ export default function AdminPage() {
 
     void syncAdminDashboard();
   }, []);
+
+  const handleDownloadSubmissionFile = async (submission) => {
+    if (!submission?.file_url || !adminEmail) {
+      return;
+    }
+
+    setDownloadingFileId(submission.id);
+    setStatusMessage("");
+    setErrorMessage("");
+
+    try {
+      const response = await fetch("/api/admin/download", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          submissionId: submission.id,
+          adminEmail,
+          filePath: submission.file_url,
+        }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok || !payload?.url) {
+        throw new Error(payload?.error || "The download link could not be prepared.");
+      }
+
+      window.open(payload.url, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      console.error("Submission file download failed", error);
+      setErrorMessage("The uploaded file could not be opened right now.");
+    } finally {
+      setDownloadingFileId(null);
+    }
+  };
 
   const handleSubmissionAction = async (submissionId, nextStatus) => {
     const client = getSupabase();
@@ -207,7 +244,17 @@ export default function AdminPage() {
                     </div>
 
                     {submission.file_url ? (
-                      <p className="plugin-form-hint">Uploaded file: {submission.file_url}</p>
+                      <div className="plugin-detail-actions" style={{ marginTop: "0.5rem" }}>
+                        <button
+                          type="button"
+                          className="plugin-auth-btn"
+                          onClick={() => void handleDownloadSubmissionFile(submission)}
+                          disabled={downloadingFileId === submission.id}
+                          style={{ display: "inline-flex", justifyContent: "center", textDecoration: "none" }}
+                        >
+                          {downloadingFileId === submission.id ? "Preparing download..." : "Download uploaded file"}
+                        </button>
+                      </div>
                     ) : null}
 
                     <div className="plugin-detail-actions" style={{ marginTop: "1rem" }}>

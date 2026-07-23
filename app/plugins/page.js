@@ -479,9 +479,15 @@ export default function PluginsPage() {
       return;
     }
 
-    const requiredFields = [pluginForm.name, pluginForm.phone, pluginForm.title, pluginForm.description, pluginForm.code];
+    const requiredFields = [pluginForm.name, pluginForm.phone, pluginForm.title, pluginForm.description];
     if (requiredFields.some((value) => value.trim() === "")) {
       setPluginSubmitMessage("Please complete all required fields before submitting.");
+      setPluginSubmitting(false);
+      return;
+    }
+
+    if (!pluginForm.code.trim() && !pluginForm.file) {
+      setPluginSubmitMessage("Please paste your source code or upload a file before submitting.");
       setPluginSubmitting(false);
       return;
     }
@@ -517,7 +523,8 @@ export default function PluginsPage() {
           throw uploadError;
         }
 
-        fileUrl = storagePath;
+        const { data: publicUrlData } = client.storage.from("plugin-files").getPublicUrl(storagePath);
+        fileUrl = publicUrlData?.publicUrl || storagePath;
       }
 
       const { error: insertError } = await client.from("plugin_submissions").insert({
