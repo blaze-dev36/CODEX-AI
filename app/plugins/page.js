@@ -65,6 +65,19 @@ const isAdminSession = async (client, email, userId) => {
   return !error && data?.role === "admin";
 };
 
+const getSiteUrl = () => {
+  const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (configuredUrl) {
+    return configuredUrl;
+  }
+
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+
+  return "https://codex-ai-site.vercel.app";
+};
+
 export default function PluginsPage() {
   const [theme, setTheme] = useState("dark");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -336,7 +349,7 @@ export default function PluginsPage() {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/plugins?create=true`,
+            emailRedirectTo: `${getSiteUrl()}/plugins?create=true`,
           },
         });
 
@@ -419,7 +432,7 @@ export default function PluginsPage() {
     }
 
     const { error } = await client.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${getSiteUrl()}/reset-password`,
     });
 
     if (error) {
@@ -447,7 +460,7 @@ export default function PluginsPage() {
       const { data, error } = await client.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/plugins?create=true`,
+          redirectTo: `${getSiteUrl()}/plugins?create=true`,
         },
       });
 
@@ -602,7 +615,7 @@ export default function PluginsPage() {
   const handleCopyPluginUrl = async () => {
     if (!selectedPlugin) return;
 
-    const shareUrl = `${window.location.origin}/plugins?plugin=${encodeURIComponent(selectedPlugin.name)}`;
+    const shareUrl = `${getSiteUrl()}/plugins?plugin=${encodeURIComponent(selectedPlugin.name)}`;
     const copyText = `.plugin+${shareUrl}`;
 
     try {
